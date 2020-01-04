@@ -1,4 +1,4 @@
-function [figure_handle] = format_plot(figure_handle,varargin);
+function [figure_handle] = format_plot(figure_handle,varargin)
     % @brief function for consistently formatting plots
     % @param[in] figure_handle - handle of figure to format
     % @param[in] varargin - key/value pairs for input as follows:
@@ -31,10 +31,15 @@ function [figure_handle] = format_plot(figure_handle,varargin);
         set(ax,'FontSize',font_size); %font size
         set(ax,'TitleFontSizeMultiplier', title_font_mult); %title multiplier
         %go through each line
-        lines = findobj(ax,'type','line'); 
-        for line_num=1:length(lines)
-            myline = lines(line_num);
+        line_like = findobj(ax,'type','Line'); %objects that can use set_unique_color_linestyle
+        line_like = [line_like; findobj(ax,'type','ErrorBar')];
+        line_like = [line_like; findobj(ax,'type','Stem')];
+        for line_num=1:length(line_like)
+            myline = line_like(line_num);
             set(myline,'LineWidth',line_width); %set linewidth
+            if isgraphics(myline,'Stem') %if its a stem also set marker size
+                set(myline,'MarkerSize',15);
+            end
             %set line color and style together together for good working with both bw and color
             if(p.Results.changeLineStyleColor)
                 set_unique_color_linestyle(myline,line_num);
@@ -48,3 +53,30 @@ function [figure_handle] = format_plot(figure_handle,varargin);
         end %poly loop
     end %axis loop
 end %function
+
+function [ line_handle ] = set_unique_color_linestyle( line_handle, seed )
+%SET_UNIQUE_COLOR_LINESTYLE set the line given from line_handle with a
+%unique color and linestyle (including marker types as linestyles) given by
+%the seed value
+%set our color list
+colors = ([ 0  ,50 ,135; 200,20 ,30 ; 0  ,120,0  ; 120,90 ,0  ;...
+            150,50 ,165; 10 ,145,120; 0  ,0  ,0  ; 220,150,20 ;...
+            200,150,200; 255,255,0  ; 255,0  ,128; 150,150,0  ;...
+            0  ,255,255; 0  ,255,0  ; 255,80  ,255]/255);
+
+%and set our lienstyles
+%this should provide 52 unique linestyle/marker pairs
+linestyles = '-|--|:|-.';
+markers    = '.|+|o|*|x|s|d|^|v|>|<|p|h'; %first one
+ls_cell = repmat(strsplit(linestyles,'|'),1,4);
+mk_cell = strsplit(markers,'|');
+
+%set the values onto the line
+set(line_handle,'Color',colors(mod(seed-1,length(colors))+1,:),...
+    'LineStyle',ls_cell{mod(seed-1,length(ls_cell))+1},...
+    'Marker',mk_cell{mod(seed-1,length(mk_cell))+1});
+
+end
+
+
+

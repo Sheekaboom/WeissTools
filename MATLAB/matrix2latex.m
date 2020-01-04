@@ -1,7 +1,14 @@
-function [latex_str] = matrix2latex(A)
+function [latex_str] = matrix2latex(A,varargin)
 %MATRIX2LATEX Covnert a matrix to latex
 % @param[in] A - matrix to convert
+% @param[in/OPT] varargin - key value args as follows:
+%       copy_to_clipboard - auto copy to system clipboard
 % @note assumes asmmath is enabled
+defaultCopyToClipboard = false;
+parser = inputParser();
+addParameter(parser,'copy_to_clipboard',defaultCopyToClipboard);
+parse(parser,varargin{:});
+%now begin the work
 env_name   = 'bmatrix'; %environment to open
 pre_text   = ''; %text to go before begin envioronment (e.g. left)
 post_text  = ''; %text to go after end environment (e.g. right)
@@ -20,6 +27,9 @@ for i=1:size(A,1)
     end
 end
 latex_str = strcat(begin_str,data_str,end_str);
+if parser.Results.copy_to_clipboard
+    clipboard('copy',latex_str);
+end
 end
 
 
