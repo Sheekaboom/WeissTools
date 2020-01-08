@@ -18,17 +18,24 @@ def format_plot(fig_handle,**kwargs):
     @param[in/OPT] kwargs - keyword arguments as follows:
         - font_size - size of the font in the plot
         - margin_size - dict with 't','l','r','b' with margin sizes (like plotly)
+        - remove_background - whether or not to make background transparent (default True)
     '''
     options =  {}
     options['font_size'] = 24
     options['margins'] = {'t':60,'b':20,'l':20,'r':20}
+    options['remove_background'] = True
     for k,v in kwargs.items():
         options[k] = v
     marker_symbol_types = list(range(45))
     line_dash_types = ['solid', 'dot', 'dash', 'longdash', 'dashdot', 'longdashdot']
     #set figure parameters
+    fig_handle.update_layout(template='plotly_white') #clear our template
     fig_handle.update_layout(font=dict(size=options['font_size']))
     fig_handle.update_layout(margin=options['margins'])
+    fig_handle.update_layout(paper_bgcolor='rgba(0,0,0,0)') #remove paper background
+    #remove the background
+    if options['remove_background']:
+        fig_handle.update_layout(plot_bgcolor='rgba(0,0,0,0)')
     #set title location
     title = fig_handle['layout']['title']['text']
     fig_handle.update_layout(
@@ -89,3 +96,14 @@ def save_plot(fig_handle,name,fig_folder,**kwargs):
         save_fun(save_name)
         print("SUCCESS")
 
+
+if __name__=='__main__':
+    
+    import numpy as np
+    x = np.linspace(0,2*np.pi,1000)
+    y = np.cos(4*x)
+    fig = go.Figure(go.Scatter(x=x,y=y))
+    fig = format_plot(fig)
+    fig.show()
+    
+    
