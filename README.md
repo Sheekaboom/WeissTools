@@ -1,6 +1,6 @@
 # WeissTools 
 
-A set of Tools for a variety of things and languages to make my life easier (and more automated). This currently most useful for generating nicely formatted plots for publishing, along with getting automatically typeset data for latex.
+A set of Tools for a variety of things and languages to make my life easier (and more automated). This currently most useful for generating nicely formatted plots for publishing, along with getting automatically typeset data for latex. Further Documentation can be found by building :code:`/docs` with sphinx.
 
 ## Python Tools
 
