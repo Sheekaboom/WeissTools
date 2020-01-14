@@ -2,13 +2,17 @@
 """
 Created on Thu Jan  2 10:13:28 2020
 tools for python plots (just plotly now)
-@author: aweis
+@author: aweiss
 """
 
 from collections import defaultdict
 import plotly.graph_objects as go
 import plotly.io as pio
 import os
+from plotly.subplots import make_subplots
+
+from WeissTools.python.MatTools import load_mat,openfig_mat
+from WeissTools.python.MatTools import findall_mat
 
 def format_plot(fig_handle,**kwargs):
     '''
@@ -95,15 +99,58 @@ def save_plot(fig_handle,name,fig_folder,**kwargs):
         save_name = os.path.join(fig_type_path,'{}.{}'.format(name,stype))
         save_fun(save_name)
         print("SUCCESS")
+        
+def merge_figs_to_subplot(*args,rows=1,cols=2,**kwargs):
+    '''
+    @brief Take a list of figures and merge them into a subplot
+    @note this will use the layout from the first plot
+    @param[in] args - figures to merge
+    @param[in/OPT] rows - rows in the subplot
+    @param[in/OPT] cols - columns in the subplot
+    @param[in/OPT] kwargs - passed to make_subplots()
+    @return Handle to merged figure
+    '''
+    fig = make_subplots(rows=rows,cols=cols,**kwargs)
+    raise NotImplementedError("Decided I didn't actually want this right now")
+        
+def fig2plotly(fig_path,**kwargs):
+    '''
+    @brief load a *.fig file from matlab and convert to a python (plotly) plot.
+    @param[in] fig_path - path to the *.fig file to load
+    @return A handle to a plotly plot.
+    '''
+    fig_mat = openfig_mat(fig_path) #open the figure
+    axes = findall_mat(fig_mat,'axes')
+    
+    fig = go.Figure() #start our figure (assume 1 axis)
+    ax = axes[0]
+    #first find all error bars
+    err_bar = findall_mat(ax,'specgraph.errorbarseries')
+    for obj in err_bar: #plot each of these
+        line = go.Scatter(x=obj.properties.XData,y=obj.properties.YData,
+                         name=obj.properties.DisplayName,
+                         error_y = dict(type='data',symmetric=False,
+                                        array=obj.properties.UData,
+                                        arrayminus=obj.properties.LData)
+                         )
+        fig.add_trace(line)
+    return fig
 
 
 if __name__=='__main__':
     
-    import numpy as np
-    x = np.linspace(0,2*np.pi,1000)
-    y = np.cos(4*x)
-    fig = go.Figure(go.Scatter(x=x,y=y))
-    fig = format_plot(fig)
-    fig.show()
+    #import numpy as np
+    #x = np.linspace(0,2*np.pi,1000)
+    #y = np.cos(4*x)
+    #fig = go.Figure(go.Scatter(x=x,y=y))
+    #fig = format_plot(fig)
+    #fig.show()
+    
+    #fig_path = r"C:\Users\aweis\Google Drive\GradWork\papers\2019\python-matlab\data\figs\fig\add_speed_comp.fig"
+    #fig_mat = openfig_mat(fig_path)
+    #import scipy.io as spio
+    #fig_mat_raw = spio.loadmat(fig_path,struct_as_record=False,squeeze_me=True)
+    #fig = fig2plotly(fig_path)
+    pass
     
     
