@@ -3,3 +3,6 @@
 
 #temp matlab files
 *.asv
+
+#pip build files
+*.egg-info
