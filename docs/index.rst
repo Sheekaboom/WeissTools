@@ -16,12 +16,12 @@ The following tools are useful for Plotting
 
 Python
 --------------
-.. automodule:: python.PlotTools
+.. automodule:: WeissTools.python.PlotTools
     :members:
 
 MATLAB
 --------------
-.. mat:automodule:: MATLAB
+.. mat:automodule:: WeissTools.MATLAB
     :members:
 
 Indices and tables
