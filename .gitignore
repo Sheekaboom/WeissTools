@@ -6,3 +6,6 @@
 
 #pip build files
 *.egg-info
+
+#ignore vscode
+.vscode
