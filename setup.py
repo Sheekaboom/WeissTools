@@ -8,3 +8,5 @@ setup(name='WeissTools',
       url='https://www.weissworks.dev',
       packages=find_packages(),
      )
+
+#build with `pip install -e .`
