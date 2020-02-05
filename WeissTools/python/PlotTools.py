@@ -99,7 +99,7 @@ def save_plot(fig_handle,name,fig_folder,**kwargs):
         save_fun = getattr(fig_handle,write_funct_dict[stype])
         save_name = os.path.join(fig_type_path,'{}.{}'.format(name,stype))
         save_fun(save_name)
-        print("SUCCESS")
+        if options['verbose']: print("SUCCESS")
         
 def merge_figs_to_subplot(*args,rows=1,cols=2,**kwargs):
     '''
