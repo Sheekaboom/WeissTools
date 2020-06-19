@@ -8,10 +8,23 @@ function [fig] = nusurf(x,y,z,varargin)
 %@return surface plot handle
 
 %% First create our meshgrid
-xdist = abs(x-x');
-ydist = abs(y-y');
-xgrid = min(x):min(xdist(xdist~=0)):max(x);
-ygrid = min(y):min(ydist(ydist~=0)):max(y);
+%save a bit of memory from vectorized version
+%xdist = abs(x-x');
+xdist_min = inf;
+for ix=1:length(x)
+    xd = abs(x(ix)-x);
+    xd_min = min(xd(xd~=0));
+    xdist_min = min([xd_min,xdist_min]);
+end
+%ydist = abs(y-y');
+ydist_min = inf;
+for iy=1:length(y)
+    yd = abs(y(iy)-y);
+    yd_min = min(yd(yd~=0));
+    ydist_min = min([yd_min,ydist_min]);
+end
+xgrid = min(x):xdist_min:max(x);
+ygrid = min(y):ydist_min:max(y);
 [X,Y] = meshgrid(xgrid,ygrid);
 
 %% Now use grid data to get the values
