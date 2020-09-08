@@ -11,9 +11,12 @@ import plotly.io as pio
 import os
 from plotly.subplots import make_subplots
 import numpy as np 
+import re
 
-from WeissTools.python.MatTools import load_mat,openfig_mat
-from WeissTools.python.MatTools import findall_mat
+from WeissTools.generic import num2pi
+
+from WeissTools.MatTools import load_mat,openfig_mat
+from WeissTools.MatTools import findall_mat
 
 def format_plot(fig_handle,**kwargs):
     '''
@@ -137,6 +140,21 @@ def fig2plotly(fig_path,**kwargs):
         fig.add_trace(line)
     return fig
 
+def set_pi_axis(fig,increment:float,xyz:str):
+    '''
+    @brief take an axis and label in increments of pi
+    @param[in] ax - axis to set pi on
+    @param[in] interval - interval to put ticks on (e.g. np.pi/2). 
+       Should be expressed in terms of a multiple of pi
+    @param[in] xyz - chararray with single or combo of 'x','y','z'
+    to specify which direction of the axis to set
+    @note Currently only for Plotly
+    '''
+    for ax_char in xyz:
+        ax_str = '{}axis'.format(ax_char.lower())
+        fig.layout[ax_str].update(dict(tickvals=np.arange(0,)))
+        raise NotImplementedError("Not yet complete")
+
 def figs2video(figs,file_path,**kwargs):
     '''
     @brief Take a list of figures (plotly for now) and save to a video
@@ -184,12 +202,12 @@ def figs2video(figs,file_path,**kwargs):
 
 if __name__=='__main__':
     
-    #import numpy as np
-    #x = np.linspace(0,2*np.pi,1000)
-    #y = np.cos(4*x)
-    #fig = go.Figure(go.Scatter(x=x,y=y))
-    #fig = format_plot(fig)
-    #fig.show()
+    import numpy as np
+    x = np.linspace(0,2*np.pi,1000)
+    y = np.cos(4*x)
+    fig = go.Figure(go.Scatter(x=x,y=y))
+    fig = format_plot(fig)
+    fig.show(renderer='svg')
     
     #fig_path = r"C:\Users\aweis\Google Drive\GradWork\papers\2019\python-matlab\data\figs\fig\add_speed_comp.fig"
     #fig_mat = openfig_mat(fig_path)
