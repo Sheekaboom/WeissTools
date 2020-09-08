@@ -7,6 +7,8 @@
 @author aweiss
 """
 
+import numpy as np
+
 def num2pi(num):
     '''
     @brief Change number(s) to string fractions of pi

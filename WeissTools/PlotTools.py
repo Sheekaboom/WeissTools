@@ -151,9 +151,23 @@ def set_pi_axis(fig,increment:float,xyz:str):
     @note Currently only for Plotly
     '''
     for ax_char in xyz:
+        #get the string for the axis
         ax_str = '{}axis'.format(ax_char.lower())
-        fig.layout[ax_str].update(dict(tickvals=np.arange(0,)))
-        raise NotImplementedError("Not yet complete")
+        
+        #get the min/max for the axis
+        myrange = np.array([min([min(d[ax_char]) for d in fig.data])
+                           ,max([max(d[ax_char]) for d in fig.data])])
+        
+        # now lets create our values and text
+        norm_range = np.round(myrange/increment)
+        tvals = np.arange(norm_range[0],norm_range[1]+1)*increment
+        ttext = num2pi(tvals)
+        ttext = ['${}$'.format(t) for t in ttext]
+        
+        #now update the figure
+        fig.update_layout({ax_str:dict(tickmode='array',tickvals=tvals,ticktext=ttext)})
+        
+    return fig
 
 def figs2video(figs,file_path,**kwargs):
     '''
