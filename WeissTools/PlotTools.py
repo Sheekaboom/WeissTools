@@ -52,6 +52,10 @@ def format_plot(fig_handle,**kwargs):
             'x':0.5,
             'xanchor': 'center',
             'yanchor': 'middle'})
+
+    # Set axes to use scientific notation (if needed)
+    fig_handle.update_xaxes(exponentformat='e',showexponent='all')
+    fig_handle.update_yaxes(exponentformat='e',showexponent='all')
     
     #now set trace specific values
     for i,tr in enumerate(fig_handle['data']): #get each trace
