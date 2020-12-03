@@ -49,15 +49,26 @@ switch plot_type
 end
 
 %% Extract some layout information
-if isfield(json_data.layout.title,'text')
-    title(json_data.layout.title.text);
+if isfield(json_data.layout,'title')
+    if isfield(json_data.layout.title,'text')
+        title(json_data.layout.title.text);
+    end
 end
-if isfield(json_data.layout.yaxis,'title')
-    ylabel(json_data.layout.yaxis.title.text);
+if isfield(json_data.layout,'yaxis')
+    if isfield(json_data.layout.yaxis,'title')
+        ylabel(json_data.layout.yaxis.title.text);
+    end
 end
-if isfield(json_data.layout.xaxis,'title')
-    xlabel(json_data.layout.xaxis.title.text);
+if isfield(json_data.layout,'xaxis')
+    if isfield(json_data.layout.xaxis,'title')
+        xlabel(json_data.layout.xaxis.title.text);
+    end
 end
+
+%% Set xlims to max and min
+lines = findall(fig_handle,'type','Line');
+xvals = [lines.XData];
+xlim([min(xvals),max(xvals)]);
 
 %% Turn on the legend
 legend('show','location','best');

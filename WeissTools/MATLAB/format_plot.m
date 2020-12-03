@@ -34,14 +34,18 @@ function [figure_handle] = format_plot(figure_handle,varargin)
         line_like = findobj(ax,'type','Line'); %objects that can use set_unique_color_linestyle
         line_like = [line_like; findobj(ax,'type','ErrorBar')];
         line_like = [line_like; findobj(ax,'type','Stem')];
+        line_like = [line_like; findobj(ax,'type','Scatter')];
         for line_num=1:length(line_like)
             myline = line_like(line_num);
             set(myline,'LineWidth',line_width); %set linewidth
             if isgraphics(myline,'Stem') %if its a stem also set marker size
                 set(myline,'MarkerSize',15);
             end
+            if isgraphics(myline,'Scatter') % if its a scatter plot set the sizes
+                set(myline,'SizeData',50);
+            end
             %set line color and style together together for good working with both bw and color
-            if(p.Results.changeLineStyleColor)
+            if(p.Results.changeLineStyleColor) && ~isgraphics(myline,'Scatter')
                 set_unique_color_linestyle(myline,line_num);
             end
         end %line_loop
