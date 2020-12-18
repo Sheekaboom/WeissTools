@@ -42,7 +42,8 @@ function [figure_handle] = format_plot(figure_handle,varargin)
                 set(myline,'MarkerSize',15);
             end
             if isgraphics(myline,'Scatter') % if its a scatter plot set the sizes
-                set(myline,'SizeData',50);
+                set(myline,'LineWidth',3);
+                set(myline,'SizeData',100);
             end
             %set line color and style together together for good working with both bw and color
             if(p.Results.changeLineStyleColor) && ~isgraphics(myline,'Scatter')

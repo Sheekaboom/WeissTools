@@ -213,6 +213,23 @@ def figs2video(figs,file_path,**kwargs):
     return file_path
     
 
+def scatter_uncert(nom_trace,err=None,**kwargs):
+    '''
+    @brief plot a plotly scatter (line) plot with continuous error bars
+    @param[in] nom_trace - nominal trace to generate error bars from (need x values and color)
+    @param[in] err - tuple of (lo,hi) y error values
+    @return a filled go.Scatter trace for the continuous error bars of the provided nominal trace
+    '''
+    xvals = list(nom_trace['x'])+list(nom_trace['x'])[::-1]
+    yvals = list(err[0])+list(err[1])[::-1]
+    trace_color = nom_trace['line']['color']
+    if trace_color is None: trace_color=[100,100,100]
+    else: trace_color = [int(v) for v in trace_color.strip('rgb(').strip(')').split(',')] #get int list
+    uncert_trace = go.Scatter(x=xvals,y=yvals,name=str(nom_trace['name'])+'_uncert'
+                    ,fill='toself',fillcolor='rgba({},{},{},0.2)'.format(*trace_color)
+                    ,line=dict(color='rgba(255,255,255,0)'),showlegend=False,**kwargs)
+    return uncert_trace
+
 
 if __name__=='__main__':
     
