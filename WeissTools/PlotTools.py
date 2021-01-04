@@ -234,6 +234,33 @@ def scatter_uncert(nom_trace,err=None,**kwargs):
                     ,line=dict(color='rgba(255,255,255,0)'),showlegend=False,**kwargs)
     return uncert_trace
 
+def polar_db(r,theta,r_range=100,**kwargs):
+    '''
+    @brief produce a polar trace for dB. This will adjust negative values of r to be above 0
+    @param[in] r - r values (in db) for plotting
+    @param[in] theta - theta values (radians) for plotting
+    @parma[in] r_range - dynamic range of the plot (max-min). All values lower
+        than max(r)-range will be set to max(r)-range
+    @param[in/OPT] kwargs - passed to plotting routine (go.Scatterpolar)
+    @note currently produces a plotly Plot with a scatterpolar trace
+    '''
+    # Adjust data
+    r_max = np.round(np.nanmax(r),-1)
+    r_min = np.round(r_max-r_range,-1)
+    r[r<r_min] = r_min
+    r_ticks = np.unique([np.int(np.round(v,-1)) for v in np.linspace(r_min,r_max,5)])
+    theta_deg = np.rad2deg(theta)
+    
+    # Now plot
+    fig = go.Figure()
+    trace = go.Scatterpolar(r=r,theta=theta_deg,**kwargs)
+    fig.add_trace(trace)
+    fig.update_layout(
+        polar=dict(
+            radialaxis=dict(tickmode='array',tickvals=r_ticks, ticktext=[str(v) for v in r_ticks])
+            )
+        )
+    return fig
 
 if __name__=='__main__':
     
@@ -243,6 +270,11 @@ if __name__=='__main__':
     fig = go.Figure(go.Scatter(x=x,y=y))
     fig = format_plot(fig)
     fig.show(renderer='svg')
+    
+    t = np.linspace(-np.pi,np.pi,361)
+    r = 20*np.log10(np.cos(t)**2)
+    db_plot = polar_db(r,t)
+    db_plot.show(renderer='svg')
     
     #fig_path = r"C:\Users\aweis\Google Drive\GradWork\papers\2019\python-matlab\data\figs\fig\add_speed_comp.fig"
     #fig_mat = openfig_mat(fig_path)
