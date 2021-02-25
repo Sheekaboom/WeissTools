@@ -21,31 +21,34 @@ fig_handle = figure(); hold on; grid on;
 %% now lets extract the data
 %this is done in cell arrays becaues the traces dont have to be
 % the same length as one another.
-x_vals = {json_data.data.x}; %get x values
-y_vals = {json_data.data.y}; %get y values
-names  = {json_data.data.name}; %get our names
+%x_vals = {json_data.data.x}; %get x values
+%y_vals = {json_data.data.y}; %get y values
+%names  = {json_data.data.name}; %get our names
+%types  = {json_data.data.type};
 
-plot_type='line'; %assume its a line plot here
-
-%extract error bar if they exist
-if isfield(json_data.data,'error_y')
-    error_y = [json_data.data.error_y]; %extract the struct
-    error_y = {error_y(:).array}; %extract the data
-    plot_type='errorbar';
-end
+%plot_type='line'; %assume its a line plot here
     
 %% now lets plot
-switch plot_type
-    case 'line' %simple line plot
-        for di=1:length(x_vals)
-            plot(x_vals{di},y_vals{di},...
-                'DisplayName',names{di}); %plot
-        end
-    case 'errorbar' %errorbar plot
-        for di=1:length(x_vals)
-            errorbar(x_vals{di},y_vals{di},...
-                error_y{di},'DisplayName',names{di});
-        end
+for di=1:length(json_data.data) % loop through each trace
+    trace_data = json_data.data{di};
+    plot_type = trace_data.type;
+    %extract error bar if they exist
+    if isfield(trace_data,'error_y')
+        error_y = [trace_data.error_y]; %extract the struct
+        %error_y = {error_y(:).array}; %extract the data
+        plot_type='errorbar';
+    end
+    switch plot_type
+        case 'bar' % bar plot
+            bar(trace_data.x,trace_data.y,1,...
+                'DisplayName',trace_data.name);
+        case 'scatter' %simple line plot
+            plot(trace_data.x,trace_data.y,...
+                'DisplayName',trace_data.name); %plot
+        case 'errorbar' %errorbar plot
+            errorbar(trace_data.x,trace_data.y,...
+                error_y,'DisplayName',trace_data.name);
+    end
 end
 
 %% Extract some layout information
@@ -66,9 +69,17 @@ if isfield(json_data.layout,'xaxis')
 end
 
 %% Set xlims to max and min
-lines = findall(fig_handle,'type','Line');
-xvals = [lines.XData];
-xlim([min(xvals),max(xvals)]);
+ax = findall(fig_handle,'type','axes');
+ax = ax(1); % for future use with subplots
+axmin=inf;axmax=-inf; % init
+% get max/min from all axis traces
+for li=1:length(ax.Children)
+    cmax = max(ax.Children(li).XData);
+    cmin = min(ax.Children(li).XData);
+    if cmax>axmax; axmax=cmax; end
+    if cmin<axmin; axmin=cmin; end
+end
+xlim([axmin,axmax]);
 
 %% Turn on the legend
 legend('show','location','best');

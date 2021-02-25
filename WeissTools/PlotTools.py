@@ -247,7 +247,7 @@ def histogram_bar(x,*args,**kwargs):
     counts,bins = np.histogram(x,**nphist_kwargs)
     bins = 0.5 * (bins[:-1] + bins[1:])
     avg_width = np.mean(np.abs(bins[:-1]-bins[1:]))
-    trace = go.Bar(x=bins, y=counts,width=avg_width,**kwargs)
+    trace = go.Bar(x=bins, y=counts,width=avg_width,marker={'line':{'width':0}},**kwargs)
     return trace
     
 def polar_db(r,theta,r_range=100,**kwargs):
