@@ -234,6 +234,22 @@ def scatter_uncert(nom_trace,err=None,**kwargs):
                     ,line=dict(color='rgba(255,255,255,0)'),showlegend=False,**kwargs)
     return uncert_trace
 
+def histogram_bar(x,*args,**kwargs):
+    '''
+    @brief create a plotly histogram using go.bar. This is useful when converting to MATLAB
+        as go.Histogram data is not stored in the JSON (see https://plotly.com/python/histograms/#accessing-the-counts-yaxis-values)
+    @param[in] x - data to create a histogram from
+    @param[in] kwargs - keyword args for np.histogram and go.bar. histogram variables will be separated out
+    @return plotly bar object
+    '''
+    nphist_kwnames = ['bins','range','normed','weights','density']
+    nphist_kwargs = {k:kwargs.pop(k) for k in nphist_kwnames if k in kwargs.keys()}
+    counts,bins = np.histogram(x,**nphist_kwargs)
+    bins = 0.5 * (bins[:-1] + bins[1:])
+    avg_width = np.mean(np.abs(bins[:-1]-bins[1:]))
+    trace = go.Bar(x=bins, y=counts,width=avg_width,**kwargs)
+    return trace
+    
 def polar_db(r,theta,r_range=100,**kwargs):
     '''
     @brief produce a polar trace for dB. This will adjust negative values of r to be above 0
