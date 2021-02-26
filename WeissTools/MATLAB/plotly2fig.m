@@ -33,11 +33,10 @@ fig_handle = figure(); hold on; grid on;
 % work... not gonna do it right now. I'll just do it manually
 ax_info = get_axes_layout_plotly(json_data.layout);
 
-if ax_info.count>1 %make our subplots
-    for axi=1:ax_info.count
-        subplot(ax_info.count,1,axi); grid on; hold on;
-    end
+for axi=1:ax_info.count
+    subplot(ax_info.count,1,axi); grid on; hold on;
 end
+
 
 %% now lets plot
 for di=1:length(json_data.data) % loop through each trace
@@ -109,30 +108,35 @@ for axi=1:length(ax_info.x.names)
     end
 end
 
-%% Set xlims to max and min
-ax = findall(fig_handle,'type','axes');
-ax = ax(1); % for future use with subplots
-axmin=inf;axmax=-inf; % init
-% get max/min from all axis traces
-for li=1:length(ax.Children)
-    cmax = max(ax.Children(li).XData);
-    cmin = min(ax.Children(li).XData);
-    if cmax>axmax; axmax=cmax; end
-    if cmin<axmin; axmin=cmin; end
+%% Set xlims to max and min if not defined
+for axi=1:ax_info.count
+    subplot(ax_info.count,1,axi);
+    ax = gca(); % get current axis
+    cur_ax_info = ax_info.x.data.(ax_info.x.names{axi});
+    if isfield(cur_ax_info,'range')
+        myrange = cur_ax_info.range;
+        xlim(myrange);
+    end
 end
-% if we have a min and max set, otherwise use auto
-if ~any(isinf([axmin,axmax]))
-    xlim([axmin,axmax]);
+
+%% Set ylims to max and min if not defined
+for axi=1:ax_info.count
+    subplot(ax_info.count,1,axi);
+    ax = gca(); % get current axis
+    cur_ax_info = ax_info.y.data.(ax_info.y.names{axi});
+    if isfield(cur_ax_info,'range') % only set if defined. Otherwise auto
+        myrange = cur_ax_info.range;
+        axmin = myrange(1); axmax = myrange(2);
+        ylim(myrange); 
+    end
 end
 
 %% Turn on the legend
-if ax_info.count>1
-    for axi=1:ax_info.count
-        subplot(ax_info.count,1,axi);
-        legend('show','location','best');
-    end
+for axi=1:ax_info.count
+    subplot(ax_info.count,1,axi);
+    legend('show','location','best');
 end
-legend('show','location','best');
+
         
 end
 
@@ -176,12 +180,16 @@ function [axinfo] = get_axes_layout_plotly(layout)
     % get the axes structs themselvs
     axinfo.x.data = struct();
     axinfo.y.data = struct();
+    axinfo.x.data_enum = {};
+    axinfo.y.data_enum = {};
     for fi=1:length(layout_fields)
         fld = layout_fields{fi};
         if startsWith(fld,'xaxis')
             axinfo.x.data.(fld) = layout.(fld);
+            axinfo.x.data_enum{end+1} = layout.(fld);
         elseif startsWith(fld,'yaxis')
             axinfo.y.data.(fld) = layout.(fld);
+            axinfo.y.data_enum{end+1} = layout.(fld);
         end
     end
     % now extract useful data
