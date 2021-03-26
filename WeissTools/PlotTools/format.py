@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Thu Jan  2 10:13:28 2020
-tools for python plots (just plotly now)
+@brief tools to format and save
 @author: aweiss
 """
 
