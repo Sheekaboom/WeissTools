@@ -3,6 +3,8 @@
 @author aweiss
 '''
 
+import numpy as np
+
 #%% Useful rotaion functions
 #@cite https://en.wikipedia.org/wiki/Rotation_matrix
 def Rx(theta):

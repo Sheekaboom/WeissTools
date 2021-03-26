@@ -3,6 +3,9 @@
 @author aweiss
 '''
 
+import numpy as np
+import plotly.graph_objs as go
+from WeissTools.rotations import Rx,Ry,Rz
 
 def get_arc_2d(start,radius,angle,num_pts=100):
     '''@brief create points of a 2D arc. These can then be rotated as needed'''
