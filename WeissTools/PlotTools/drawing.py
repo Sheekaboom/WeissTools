@@ -7,6 +7,48 @@ import numpy as np
 import plotly.graph_objs as go
 from WeissTools.rotations import Rx,Ry,Rz
 
+#%% Some generally useful things
+def get_line_loc3d(trace,loc='middle'):
+    '''@brief approximate the location on the line at the 'start'|'middle'|'end' or at some decimal [0,1]'''
+    if isinstance(loc,float): 
+        loc_dist = loc;
+        loc='middle'
+    else: loc_dist = 0.5
+    if loc=='start':
+        mloc = np.asarray([trace[ax][0] for ax in 'xyz'])
+    elif loc=='end':
+        mloc = np.asarray([trace[ax][-1] for ax in 'xyz'])
+    elif loc=='middle':
+        nvals = len(trace['x'])
+        if nvals==2: midx=1
+        else: midx = int(np.round(nvals*loc_dist))
+        # now get the actual location
+        if midx==0:
+            mloc =[trace[ax][midx] for ax in 'xyz']
+        else:
+            mloc = [trace[ax][midx-1]+(trace[ax][midx]-trace[ax][midx-1])*loc_dist for ax in 'xyz']
+        # now adjust the size
+        
+    else:
+        raise Exception("Location '{}' not recognized. Must be 'start'|'middle'|'end'".format(loc))
+    return np.asarray(mloc)
+
+def cart2sphere(x,y,z):
+    '''@brief convert cartesian coordinates to spherical coordinates (as defined in balanis)'''
+    phi = np.arctan2(y,x)
+    theta = np.arctan2(np.sqrt(x**2+y**2),z)
+    r = np.sqrt(x**2+y**2+z**2)
+    return r,theta,phi
+
+def sphere2cart(r,theta,phi):
+    '''@brief convert spherical coords to cartesian (as defined in balanis)'''
+    x = r*np.sin(theta)*np.cos(phi)
+    y = r*np.sin(theta)*np.sin(phi)
+    z = r*np.cos(theta)
+    return x,y,z
+
+        
+#%% Some arc functions
 def get_arc_2d(start,radius,angle,num_pts=100):
     '''@brief create points of a 2D arc. These can then be rotated as needed'''
     pts = np.linspace(0,angle,num_pts)
@@ -22,23 +64,7 @@ def get_arc_3d(*args,**kwargs):
 def get_line_label_3d(trace,label,loc='middle',**kwargs):
     '''@brief get an annotation for a 3D line (must add to scene.annotations). Add to 'start'|'middle'|'end'|float(0,1) '''
     # Get the location to put the annotation
-    if isinstance(loc,float): 
-        loc_dist = loc;
-        loc='middle'
-    else: loc_dist = 0.5
-    if loc=='start':
-        mloc = np.asarray([trace[ax][0] for ax in 'xyz'])
-    elif loc=='end':
-        mloc = np.asarray([trace[ax][-1] for ax in 'xyz'])
-    elif loc=='middle':
-        nvals = len(trace['x'])
-        midx = int(np.ceil(nvals*loc_dist))
-        if nvals%2==0: # if even number
-            mloc = np.mean([[trace[ax][midx],trace[ax][midx-1]] for ax in 'xyz'],axis=-1)
-        else: # if odd
-            mloc = np.asarray([trace[ax][midx] for ax in 'xyz'])
-    else:
-        raise Exception("Location '{}' not recognized. Must be 'start'|'middle'|'end'".format(loc))
+    mloc = get_line_loc3d(trace,loc)
     # now get the annotation
     annot = {
         'showarrow':False,
@@ -47,7 +73,7 @@ def get_line_label_3d(trace,label,loc='middle',**kwargs):
     annot.update(**kwargs)
     return annot
 
-#%% Some useful functions
+#%% Creating arrowheads for vectors
 def arrowhead3d(start,end,size=None,**kwargs):
     '''
     @brief plot an arrowhead on a 3d plotly plot (just 2 perpidicular planes)
@@ -58,27 +84,23 @@ def arrowhead3d(start,end,size=None,**kwargs):
     arr_vec_norm = arr_vec/np.sqrt(np.sum(arr_vec**2))
     if size is None:
         size=np.sqrt(np.sum(arr_vec**2))
+    # now create the template arrow. arrow tip at the origin pointing up the z axis [[xxx],[yyy],[zzz]]
+    template = np.asarray([[0,0,0],[0,1,-1],[0,-1,-1]])*size
     # now calculate our rotation
-    zt = np.arctan2(arr_vec[1],arr_vec[0]) # atan(y,x)
-    yt = np.arctan2(arr_vec[2],np.sqrt(np.sum(arr_vec[:2]**2))) # atan(z,euc_norm(x,y))
+    r,theta,phi = cart2sphere(*arr_vec) # get theta,phi
     # now calculate the positions
-    coords = np.ndarray((3,3),dtype=np.double)
-    coords[0] = end #end point
     meshes = []
-    for xr in [0,np.pi/2]:
-        coords[1] = (Rz(zt)@Ry(yt)@Rx(xr)@Ry(np.pi/2)@np.asarray([1,0,0])*size)+end-(arr_vec_norm*size)
-        coords[2] = (Rz(zt)@Ry(yt)@Rx(xr)@Ry(-np.pi/2)@np.asarray([1,0,0])*size)+end-(arr_vec_norm*size)
+    for rot in [0,np.pi/2]:
+        coords = (Rz(phi)@Ry(theta)@Rz(rot)@template)+np.asarray(end)[...,np.newaxis]
         tc = {
-          'x':coords[:,0],
-          'y':coords[:,1],
-          'z':coords[:,2],
+          'x':coords[0,:],
+          'y':coords[1,:],
+          'z':coords[2,:],
           'i':[0],'j':[1],'k':[2],
           }
         tc.update(**kwargs)
         meshes.append(go.Mesh3d(**tc))
-    return meshes
-    
-    
+    return meshes    
     
 def get_line_arrowhead(trace,side,size=None):
     '''
@@ -99,9 +121,10 @@ def get_line_arrowhead(trace,side,size=None):
         coords[:,1] = trace['y'][num_pts-2:]
         coords[:,2] = trace['z'][num_pts-2:]
     
-    ah = arrowhead3d(coords[0], coords[1],size=size,color=trace['marker']['color'])
+    ah = arrowhead3d(coords[0], coords[1],size=size,color=trace['marker']['color'] or trace['line']['color'])
     return ah
 
+#%% Creating axes
 def get_axes_lines(mag=1,ax_keys=['x','y','z']):
     '''@brief return a dict of 3D traces for our xyz axes with a given magnitude'''
     axes_coords = {
@@ -120,3 +143,67 @@ def get_axes_lines(mag=1,ax_keys=['x','y','z']):
         axes_lines[k] = line
     # add arrows
     return axes_lines
+
+def get_normal_plane(start,end,size=None):
+    '''
+    @brief create a 'plane' normal to a line (xyz). This plane is centered
+        at the origin but rotated to be normal to the trace. This returns 4 coordinates
+        for each corner of a 'plane' (a square actually)
+    @param[in] start - starting (xyz) coordinates iterable of line to be normal to 
+    @param[in] end - ending (xyz) coordinates iterable of line to be normal to 
+    @param[in/OPT] size - size of the plane. If none default to .5 size of vector
+    @return array of [x,y,z] coordinates for each corner of the plane
+    '''
+    # get distances
+    dv = np.asarray(end)-np.asarray(start)
+    if size is None: size = np.sqrt(np.sum(dv**2))*0.5
+    # make rotatable plane
+    plane = np.asarray([[1,1,-1,-1],[1,-1,1,-1],[0,0,0,0]])*size # xyz coordinates
+    # calculate our rotations. This is done differently than arrowheads... cause theres no orientation component
+    r,theta,phi = cart2sphere(*dv)
+    plane = Rz(phi)@Ry(theta)@plane
+    return plane
+
+
+#%% Some EM specific things
+
+def get_plane_wave(theta,phi,r=1,size=None,incident=False,**kwargs):
+    '''
+    @brief get traces for drawing a 3D plane wave in plotly. This assumes a plane
+        wave travelling out of the origin
+    @param[in] theta - theta angle of the plane wave
+    @param[in] phi   - phi angle of the plane wave
+    @param[in] r     - distance fromt he origin to the end of the vector
+    @param[in/OPT] len - length of the vector (default .25*r)
+    @param[in/OPT] incident - whether we are going into (True) or out of (False) the origin (default false)
+    @return A list of traces for drawing this will be [line,arrowhead1,...,plane1,...,planeN]
+    '''
+    # default length
+    if size is None: size = 0.35*r
+    start = sphere2cart(r-size,theta,phi)
+    end = sphere2cart(r,theta,phi)
+    # if incident flip start and end
+    if incident: tmp=start;start=end;end=tmp
+    # now make our plots
+    color = (255,165,0)
+    line_spec = {'mode':'lines','line':{'color':'rgb{}'.format(color)},'showlegend':False}
+    line_spec.update(kwargs)
+    line = go.Scatter3d(**{k:[start[i],end[i]] for i,k in enumerate('xyz')},**line_spec)
+    head = get_line_arrowhead(line, 'end',0.025)
+    planes = []
+    for l in [0.4,0.5,0.6]:
+        plane = get_normal_plane(start,end,size=0.05)
+        myloc   = get_line_loc3d(line,loc=l)
+        plane += myloc[...,np.newaxis]
+        mesh_spec = {'color':'rgba{}'.format(tuple(list(color)+[0.25])),'showlegend':False}
+        mesh = go.Mesh3d(**{ax:coords for ax,coords in zip('xyz',plane)},**mesh_spec)
+        planes.append(mesh)
+    return [line]+head+planes
+    
+    
+    
+    
+    
+    
+    
+    
