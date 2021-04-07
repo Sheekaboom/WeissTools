@@ -86,6 +86,11 @@ def save_plot(fig_handle,name,fig_folder,**kwargs):
     options['format_plot'] = True
     for k,v in kwargs.items():
         options[k] = v
+    # kwargs specific to each type
+    options['type_kwargs'] = {k:{} for k in options['save_types']}
+    options['type_kwargs']['html']['include_mathjax'] = 'cdn'
+    options['type_kwargs'].update(kwargs.get('type_kwargs',{}))
+
         
     #format if desired
     if options['format_plot']:
@@ -105,7 +110,7 @@ def save_plot(fig_handle,name,fig_folder,**kwargs):
         if options['verbose']: print("    {:6s}:".format(stype),end='')
         save_fun = getattr(fig_handle,write_funct_dict[stype])
         save_name = os.path.join(fig_type_path,'{}.{}'.format(name,stype))
-        save_fun(save_name)
+        save_fun(save_name,**options['type_kwargs'][stype])
         if options['verbose']: print("SUCCESS")
         
 def merge_figs_to_subplot(*args,rows=1,cols=2,**kwargs):
