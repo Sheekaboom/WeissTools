@@ -239,6 +239,11 @@ class WJSONEncoder(json.JSONEncoder):
     def default(self,obj):
         if isinstance(obj,np.ndarray): #change any ndarrays to lists
             return obj.tolist()
+        if isinstance(obj,bytes):
+            try:
+                return obj.decode()
+            except UnicodeDecodeError:
+                return str(obj)
         if np.iscomplexobj(obj): #then its a complex number
             return complex_number_encoder(obj) #encode complex numbers
         elif hasattr(obj,self.custom_encoding_method): #assume this will then be a class with a custom method
