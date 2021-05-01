@@ -13,7 +13,7 @@ function set_pi_axis(ax,interval,xyz)
 
         %start at 0 to always include 0
         ticks = lims(1):interval:lims(2);
-        ticks = ticks - ticks(find(ticks==min(abs(ticks))));
+        ticks = ticks - ticks(find(abs(ticks)==min(abs(ticks))));
 
         %Now set the tick values
         set(ax,sprintf('%cTick',dchar),ticks);
