@@ -3,6 +3,9 @@
 @author aweiss
 '''
 
+import plotly.graph_objs as go
+import numpy as np
+
 def scatter_uncert(nom_trace,err=None,**kwargs):
     '''
     @brief plot a plotly scatter (line) plot with continuous error bars
