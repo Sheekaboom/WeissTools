@@ -91,7 +91,13 @@ end
 for axi=1:length(ax_info.y.names)
     fld = ax_info.y.names{axi};
     if isfield(ax_info.y.data.(fld),'title')
-        ylabel(ax_info.y.data.(fld).title.text);
+        axtitle = ax_info.y.data.(fld).title.text;
+        label_args = {};
+        if islatex(axtitle) 
+            axtitle = convert_latex(axtitle);
+            label_args = [label_args,{'interpreter','latex'}]; 
+        end
+        ylabel(axtitle,label_args{:})
     end
 end
 
@@ -163,8 +169,15 @@ function [mtex] = convert_latex(tex)
         text = [strrep(full_str(1:end-1),'\text{','$'),'$'];
         mtex = strrep(mtex,full_str,text);
     end
+    % Remove any "large" operators
+    [re_start,re_end] = regexp(mtex,'\\LARGE\{.+\}');
+    for i=1:length(re_start)
+        full_str = mtex(re_start(i)-1:re_end(i)); %-1 to include $
+        text = strrep(full_str(1:end-1),'\LARGE{','$');
+        mtex = strrep(mtex,full_str,text);
+    end
     % remove any empty math sections
-    mtex = strrep(mtex,'$$','');
+    mtex = regexprep(mtex,'\${2,}','');
 end
     
         
