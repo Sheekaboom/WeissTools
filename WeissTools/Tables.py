@@ -43,15 +43,15 @@ def table2word(table,cols=None,rows=None,rtype='text',formats={},**kwargs):
     # assume we built a dataframe here
     return table.to_csv(**options)
     
-def table2latex(table,formats={},add_hline=True,column_format=None,**kwargs):
+def table2latex(table,formats={},add_hline=True,bold_cols=True,column_format=None,mathmode=True,**kwargs):
     '''
     @brief change table data to format usable in word
     @param[in] table - table (or just data) to get data from. 
         If pandas DataFrame try and get rows, cols from it too.
     @param[in/OPT] add_hline - add hline in between each row
-    @param[in/OPT] rtype - return type. Text will print text to be copied into word, tab delimited,
-        and should then use Insert > Table > Convert Text to Table.
-    @param[in/OPT] format_override - dict of type/format specifier key values. Overrides 
+    @param[in/OPT] bold_cols - bold column names
+    @param[in/OPT] mathmode - remove any "\$" and replace with "$" at the end to allow mathmode
+    @param[in/OPT] formats - dict of type/format specifier key values. Overrides 
     @param[in/OPT] kwargs - if DataFrame, passed to pd.DataFrame.to_csv()
     '''
     # more in depth column formatting (can pass single value to extend to all columns)
@@ -76,9 +76,17 @@ def table2latex(table,formats={},add_hline=True,column_format=None,**kwargs):
     options.update(kwargs)
     # assume we built a dataframe here
     tex_table = table.to_latex(**options)
+    # add bolded column names if desired
+    if bold_cols:
+        col_names = kwargs.get('columns',table.columns) # get the column names
+        tex_table = wrap_tex_table_columns(tex_table, col_names,'\\textbf{%s}')
+            
     # add hline in between non rule specified rows (e.g. midrule, toprule, bottomrule)
     if add_hline:
         tex_table = add_tex_table_hlines(tex_table)
+    # make mathmode (if desired)
+    if mathmode:
+        tex_table = set_mathmode(tex_table)
     # now return
     return tex_table
     
@@ -93,6 +101,34 @@ def add_tex_table_hlines(tex_str):
         if not lined[i]: #if its not lined, add a line to the next one.
             split_table[i+1] = '\n\\hline'+split_table[i+1] 
     return r'\\'.join(split_table)
+
+def wrap_tex_table_columns(tex_str,col_names,format_str='\\textbf{%s}'):
+    '''@brief wrap column names given a tex string and the column names in a format string'''
+    col_re = '&'.join(['\s*{}\s*'.format(c) for c in col_names])
+    col_match = re.findall(col_re,tex_str)[0]
+    match_split = col_match.split('&') # split on separator
+    updated_split = []
+    for ms,col in zip(match_split,col_names): # now replace with formatter
+        updated_split.append(ms.replace(str(col),format_str %(col)))
+    new_cols = '&'.join(updated_split)
+    return tex_str.replace(col_match,new_cols)
+
+def set_mathmode(tex_str):
+    '''@brief set mathmode by changing "\$" to "$"'''
+    return re.sub(r'\\*\$','$',tex_str)
+
+def table2strtable(table,formats={}):
+    '''@brief convert a table to a set of strings given formats for datatypes'''
+    def format_fun(val): # formatter for each value
+        #first get the formatter
+        formatter="%s" #init to string
+        for k,v in formats.items():
+            if isinstance(val,k): # if its an instance of a specified type, first match is chosen
+                formatter=v
+                break 
+        # return the forma
+        return (formatter %(val))
+    return table.applymap(format_fun)
         
 def merge_tables(*tables,merge_fun=None):
     '''
@@ -132,4 +168,7 @@ if __name__=='__main__':
     
     sl = ['|c','|r|r|r|','|m{.15\textwidth}|','||l|']
     [re.findall('([rcl]|[pmb]{.*})',s) for s in sl]
+    
+    strtable = table2strtable(table,formats={float:'$%4.2f$'})
+    print(strtable)
     
