@@ -152,7 +152,24 @@ def merge_tables_float(*tables,float_format=DEFAULT_FORMATS[float],str_format=DE
         formatted_floats = tuple([float_format %v for v in vals])
         return (str_format+('('+str_format+')')*(len(vals)-1)) %formatted_floats
     return merge_tables(*tables,merge_fun=merge_fun)
-    
+
+def split_table(table,split_fun=None):
+    '''
+    @brief split tables merged by merge_fun
+    '''
+    if split_fun is None:
+        def split_fun(val):
+            return [float(v) for v in re.findall("\d+\.*\d*e{0,1}-*\d*",val)] # find decimals and scientific notation
+    # first get the number of return vals from split_fun and create tables
+    ntables = len(split_fun(table.iloc[0,0]))
+    out_tables = [pd.DataFrame(index=table.index,columns=table.columns) for i in range(ntables)]
+    # now go through each value and select it
+    for ri in range(len(table)):
+        for ci in range(len(table.iloc[ri])):
+            cell_split = split_fun(table.iloc[ri,ci])
+            for i,t in enumerate(out_tables): t.iloc[ri,ci] = cell_split[i]
+    # now return
+    return out_tables
     
     
 #%% Some testing
