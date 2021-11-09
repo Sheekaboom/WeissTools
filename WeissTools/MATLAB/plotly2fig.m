@@ -58,6 +58,16 @@ for di=1:length(json_data.data) % loop through each trace
         %error_y = {error_y(:).array}; %extract the data
         plot_type='errorbar';
     end
+    % check if its filled (and fill if needed)
+    if isfield(trace_data,'fill') % then assume its filled (toself)
+        %fill with transparent grey
+        % just skip for now
+       continue
+       data_mid = floor(length(trace_data.x)/2); % find the middle of the data
+       fill([trace_data.x(1:data_mid);trace_data.x(data_mid+1:end)],...
+           [trace_data.y(1:data_mid);trace_data.y(data_mid+1:end)],...
+           [.39,.39,.39],'alpha',0.2,'linestyle','None');
+    end 
     
     plot_kwargs = {'DisplayName',trace_data.name};
     switch plot_type
@@ -79,6 +89,7 @@ for di=1:length(json_data.data) % loop through each trace
         case 'errorbar' %errorbar plot
             errorbar(trace_data.x,trace_data.y,error_y,plot_kwargs{:});
     end
+   
 end
 
 %% Extract some layout information
@@ -220,6 +231,12 @@ function [axinfo] = get_axes_layout_plotly(layout)
     % assume number of x axes = num subplots
     axinfo.count = length(axinfo.x.anchors); 
 end    
+
+function [color] = colorstr2matlab(str)
+    %@brief convert a plotly color string to MATLAB
+    %@note this also normalizes to 255
+    [cs,ce] = regexp(str,'\d\.{0,1}[\d]*'); % get start and end
+end
 
 
 %{

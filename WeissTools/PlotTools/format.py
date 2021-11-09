@@ -81,7 +81,7 @@ def save_plot(fig_handle,name,fig_folder,**kwargs):
     @note kwargs also passed to format_plot()
     '''
     options = {}
-    options['save_types'] = ['png','jpg','svg','html','json']
+    options['save_types'] = ['png','jpg','svg','html','json','pdf']
     options['verbose'] = False
     options['format_plot'] = True
     for k,v in kwargs.items():
