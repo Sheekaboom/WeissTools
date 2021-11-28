@@ -39,6 +39,18 @@ end
 
 
 %% now lets plot
+function [] = set_trace_legend(trace,data)
+    set(trace,'DisplayName',data.name);
+    if isfield(data,'showlegend')
+        onoffmap = containers.Map({1,0},{'on','off'});
+        set(trace.Annotation.LegendInformation,'IconDisplayStyle',onoffmap(data.showlegend));
+    end
+end
+function [] = set_line_properties(trace,data)
+    if isfield(data,'line')
+        if isfield(data.line,
+end
+trace_handles = {};
 for di=1:length(json_data.data) % loop through each trace
     % Handle in case its a cell array (sometimes it is)
     if iscell(json_data.data)
@@ -69,10 +81,10 @@ for di=1:length(json_data.data) % loop through each trace
            [.39,.39,.39],'alpha',0.2,'linestyle','None');
     end 
     
-    plot_kwargs = {'DisplayName',trace_data.name};
+    plot_kwargs = {};
     switch plot_type
         case 'bar' % bar plot
-            bar(trace_data.x,trace_data.y,1,plot_kwargs{:});
+            myhandle = bar(trace_data.x,trace_data.y,1,plot_kwargs{:});
             
         case 'scatter' %simple line plot
             % now check the modes
@@ -81,71 +93,64 @@ for di=1:length(json_data.data) % loop through each trace
             % switch for future extension
             switch trace_mode
                 case 'markers'
-                    scatter(trace_data.x,trace_data.y,plot_kwargs{:})
+                    myhandle = scatter(trace_data.x,trace_data.y,plot_kwargs{:});
                 otherwise
-                    plot(trace_data.x,trace_data.y,plot_kwargs{:}); %plot
+                    myhandle = plot(trace_data.x,trace_data.y,plot_kwargs{:}); %plot
             end
             
         case 'errorbar' %errorbar plot
-            errorbar(trace_data.x,trace_data.y,error_y,plot_kwargs{:});
+            myhandle = errorbar(trace_data.x,trace_data.y,error_y,plot_kwargs{:});
+            
+        otherwise 
+            myhandle = "ERROR: No matching plot type found";
     end
-   
+    set_trace_legend(myhandle,trace_data);
+    trace_handles{end+1} = myhandle;
 end
 
 %% Extract some layout information
-if isfield(json_data.layout,'title')
-    if isfield(json_data.layout.title,'text')
-        title(json_data.layout.title.text);
+function [] = set_axis_title(ax_obj,set_funct)
+    if isfield(ax_obj,'title')
+        if isfield(ax_obj.title,'text')
+            axtitle = ax_obj.title.text;
+            label_args = {};
+            if islatex(axtitle) 
+                axtitle = convert_latex(axtitle);
+                label_args = [label_args,{'interpreter','latex'}]; 
+            end
+            set_funct(axtitle,label_args{:})
+        end
+    end
+end
+function [] = set_axis_type(ax_obj,set_funct)
+    if isfield(ax_obj,'type')
+        set_funct(ax_obj.type);
+    end   
+end
+function [] = set_axis_range(ax_obj,set_funct)
+    if isfield(ax_obj,'range') % only set if defined. Otherwise auto
+        myrange = ax_obj.range;
+        set_funct(myrange); 
     end
 end
 
+% Set title
+set_axis_title(json_data.layout,@title)
+% Set yaxis
 for axi=1:length(ax_info.y.names)
     fld = ax_info.y.names{axi};
-    if isfield(ax_info.y.data.(fld),'title')
-        axtitle = ax_info.y.data.(fld).title.text;
-        label_args = {};
-        if islatex(axtitle) 
-            axtitle = convert_latex(axtitle);
-            label_args = [label_args,{'interpreter','latex'}]; 
-        end
-        ylabel(axtitle,label_args{:})
-    end
+    ax_obj = ax_info.y.data.(fld);
+    set_axis_title(ax_obj,@ylabel)
+    set_axis_type(ax_obj,@(t) set(gca,'YScale',t));
+    set_axis_range(ax_obj,@ylim);
 end
-
+% Set xaxis
 for axi=1:length(ax_info.x.names)
     fld = ax_info.x.names{axi};
-    if isfield(ax_info.x.data.(fld),'title')
-        axtitle = ax_info.x.data.(fld).title.text;
-        label_args = {};
-        if islatex(axtitle) 
-            axtitle = convert_latex(axtitle);
-            label_args = [label_args,{'interpreter','latex'}]; 
-        end
-        xlabel(axtitle,label_args{:})
-    end
-end
-
-%% Set xlims to max and min if not defined
-for axi=1:ax_info.count
-    subplot(ax_info.count,1,axi);
-    ax = gca(); % get current axis
-    cur_ax_info = ax_info.x.data.(ax_info.x.names{axi});
-    if isfield(cur_ax_info,'range')
-        myrange = cur_ax_info.range;
-        xlim(myrange);
-    end
-end
-
-%% Set ylims to max and min if not defined
-for axi=1:ax_info.count
-    subplot(ax_info.count,1,axi);
-    ax = gca(); % get current axis
-    cur_ax_info = ax_info.y.data.(ax_info.y.names{axi});
-    if isfield(cur_ax_info,'range') % only set if defined. Otherwise auto
-        myrange = cur_ax_info.range;
-        axmin = myrange(1); axmax = myrange(2);
-        ylim(myrange); 
-    end
+    ax_obj = ax_info.x.data.(fld);
+    set_axis_title(ax_obj,@xlabel)
+    set_axis_type(ax_obj,@(t) set(gca,'XScale',t));
+    set_axis_range(ax_obj,@xlim);
 end
 
 %% Turn on the legend
@@ -156,6 +161,7 @@ end
 
         
 end
+
 
 
 function [tf] = islatex(str)
