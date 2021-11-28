@@ -178,6 +178,37 @@ def set_pi_axis(fig,increment:float,xyz:str):
         
     return fig
 
+def set_positive_theta(fig_handle,phi=0):
+    '''
+    @brief take a figure with x axis of theta values and change any negative
+     values to positive and add coresponding phi values to the plot
+    @param[in] fig - figure handle with theta values on x axis
+       Detailed explanation goes here
+    @param[in/OPT] phi - phi value the plot is at (typically 0)
+    @note this just changes the labels. The values must stay otherwise the
+       plot will start looking weird (cant have multiple positives)
+    @return updated figure with phi labels and positive theta labels
+    '''
+    #Now lets change the labels and add a line
+    axes = [{'x':'xaxis','y':'yaxis'}] # list for future implementation of subplots
+    for ax in axes:
+        #add a vertical line at 0
+        fig_handle.add_vline(x=0)
+        # set new x tick values
+        xta = np.abs(fig_handle.layout[ax['x']]['tickvals']); # get absolute value (no negative)
+        xtlabels = num2pi(xta)
+        fig_handle.layout[ax['x']]['ticktext'] = ['${}$'.format(xtl) for xtl in xtlabels]
+    # add the phi labels
+    
+    phi_vals = [num2pi(np.pi-phi)[0],num2pi(phi)[0]]; # strings for phi labels
+    annot_config = {'showarrow':False,'xref':'x','x':0,'yanchor':'bottom','yref':'y domain','y':1}
+    fig_handle.add_annotation(text='$\\leftarrow\\phi={} $'.format(phi_vals[0]),
+                              xanchor='right',xshift=-20,**annot_config)
+    fig_handle.add_annotation(text='$\\phi={}\\rightarrow$'.format(phi_vals[1]),
+                              xanchor='left',xshift=10,**annot_config)
+    return fig_handle
+    
+
 def figs2video(figs,file_path,**kwargs):
     '''
     @brief Take a list of figures (plotly for now) and save to a video
@@ -285,6 +316,7 @@ def polar_db(r,theta,r_range=100,**kwargs):
 
 if __name__=='__main__':
     
+    """
     import numpy as np
     x = np.linspace(0,2*np.pi,1000)
     y = np.cos(4*x)
@@ -296,12 +328,20 @@ if __name__=='__main__':
     r = 20*np.log10(np.cos(t)**2)
     db_plot = polar_db(r,t)
     db_plot.show(renderer='svg')
+    """
     
     #fig_path = r"C:\Users\aweis\Google Drive\GradWork\papers\2019\python-matlab\data\figs\fig\add_speed_comp.fig"
     #fig_mat = openfig_mat(fig_path)
     #import scipy.io as spio
     #fig_mat_raw = spio.loadmat(fig_path,struct_as_record=False,squeeze_me=True)
     #fig = fig2plotly(fig_path)
-    pass
     
+    # TESTING set_positive_theta
+    import plotly.io as pio
+    fname = '/home/alec/git/Weiss_PhD_Thesis/data/estimator_evaluator/verification/measurement/figs/json/spatial_response.json'
+    fig = pio.read_json(fname)
+    fig_pi = set_pi_axis(fig, np.pi/8, 'x')
+    fig_pi = set_positive_theta(fig, 0)
+    
+    fig_pi.write_html('./tmp/test.html',include_mathjax='cdn')
     

@@ -9,3 +9,6 @@
 
 #ignore vscode
 .vscode
+
+#ignore temp folders
+tmp/
