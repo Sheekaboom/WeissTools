@@ -17,15 +17,17 @@ p.addParameter('figureLocation',[2,2,7,5]);
 p.addParameter('figureUnits','Inches')
 p.addParameter('formatPlot',true)
 p.addParameter('saveTypes',{'png','epsc','jpg','fig','emf','tiff','svg'});
+p.addParameter('formatArgs',{});
 p.parse(varargin{:});
 
 save_types      = p.Results.saveTypes;
 figure_location = p.Results.figureLocation;
 figure_units    = p.Results.figureUnits;
 format_plot_flg = p.Results.formatPlot;
+format_args = p.Results.formatArgs;
 
 if format_plot_flg
-    fig_handle = format_plot(fig_handle);
+    fig_handle = format_plot(fig_handle,format_args{:});
 end
 
 if strcmp(figure_location,'none')
