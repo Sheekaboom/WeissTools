@@ -27,11 +27,13 @@ def format_plot(fig_handle,**kwargs):
         - font_size - size of the font in the plot
         - margin_size - dict with 't','l','r','b' with margin sizes (like plotly)
         - remove_background - whether or not to make background transparent (default True)
+        - format_data - format plots of data (default true)
     '''
     options =  {}
     options['font_size'] = 24
     options['margins'] = {'t':60,'b':20,'l':20,'r':20}
     options['remove_background'] = True
+    options['format_data'] = True
     for k,v in kwargs.items():
         options[k] = v
     marker_symbol_types = list(range(45))
@@ -58,12 +60,13 @@ def format_plot(fig_handle,**kwargs):
     fig_handle.update_yaxes(exponentformat='e',showexponent='all')
     
     #now set trace specific values
-    for i,tr in enumerate(fig_handle['data']): #get each trace
-        if tr['type'] == 'scatter': #its a scatter/line plot
-            dash_type = line_dash_types[i%len(line_dash_types)] #get mod value
-            marker_type = marker_symbol_types[i%len(marker_symbol_types)]
-            tr['line']['dash'] = dash_type #set line type
-            tr['marker']['symbol'] = marker_type #set marker type
+    if options['format_data']:
+        for i,tr in enumerate(fig_handle['data']): #get each trace
+            if tr['type'] == 'scatter': #its a scatter/line plot
+                dash_type = line_dash_types[i%len(line_dash_types)] #get mod value
+                marker_type = marker_symbol_types[i%len(marker_symbol_types)]
+                tr['line']['dash'] = dash_type #set line type
+                tr['marker']['symbol'] = marker_type #set marker type
     #now return the handle for more clear code
     return fig_handle      
     
