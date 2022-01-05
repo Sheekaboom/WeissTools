@@ -39,6 +39,7 @@ end
 
 
 %% now lets plot
+trace_handles = {};
 for di=1:length(json_data.data) % loop through each trace
     % Handle in case its a cell array (sometimes it is)
     if iscell(json_data.data)
@@ -69,10 +70,10 @@ for di=1:length(json_data.data) % loop through each trace
            [.39,.39,.39],'alpha',0.2,'linestyle','None');
     end 
     
-    plot_kwargs = {'DisplayName',trace_data.name};
+    plot_kwargs = {};
     switch plot_type
         case 'bar' % bar plot
-            bar(trace_data.x,trace_data.y,1,plot_kwargs{:});
+            myhandle = bar(trace_data.x,trace_data.y,1,plot_kwargs{:});
             
         case 'scatter' %simple line plot
             % now check the modes
@@ -81,81 +82,107 @@ for di=1:length(json_data.data) % loop through each trace
             % switch for future extension
             switch trace_mode
                 case 'markers'
-                    scatter(trace_data.x,trace_data.y,plot_kwargs{:})
+                    myhandle = scatter(trace_data.x,trace_data.y,plot_kwargs{:});
                 otherwise
-                    plot(trace_data.x,trace_data.y,plot_kwargs{:}); %plot
+                    myhandle = plot(trace_data.x,trace_data.y,plot_kwargs{:}); %plot
             end
             
         case 'errorbar' %errorbar plot
-            errorbar(trace_data.x,trace_data.y,error_y,plot_kwargs{:});
+            myhandle = errorbar(trace_data.x,trace_data.y,error_y,plot_kwargs{:});
+            
+        otherwise 
+            myhandle = "ERROR: No matching plot type found";
     end
-   
+    set_trace_legend(myhandle,trace_data);
+    set_trace_properties(myhandle,trace_data);
+    trace_handles{end+1} = myhandle;
 end
 
 %% Extract some layout information
-if isfield(json_data.layout,'title')
-    if isfield(json_data.layout.title,'text')
-        title(json_data.layout.title.text);
-    end
-end
 
-for axi=1:length(ax_info.y.names)
-    fld = ax_info.y.names{axi};
-    if isfield(ax_info.y.data.(fld),'title')
-        axtitle = ax_info.y.data.(fld).title.text;
-        label_args = {};
-        if islatex(axtitle) 
-            axtitle = convert_latex(axtitle);
-            label_args = [label_args,{'interpreter','latex'}]; 
-        end
-        ylabel(axtitle,label_args{:})
+    % Set title
+    set_axis_title(json_data.layout,@title)
+    % Set yaxis
+    for axi=1:length(ax_info.y.names)
+        fld = ax_info.y.names{axi};
+        ax_obj = ax_info.y.data.(fld);
+        set_axis_title(ax_obj,@ylabel)
+        set_axis_type(ax_obj,@(t) set(gca,'YScale',t));
+        set_axis_range(ax_obj,@ylim);
     end
-end
-
-for axi=1:length(ax_info.x.names)
-    fld = ax_info.x.names{axi};
-    if isfield(ax_info.x.data.(fld),'title')
-        axtitle = ax_info.x.data.(fld).title.text;
-        label_args = {};
-        if islatex(axtitle) 
-            axtitle = convert_latex(axtitle);
-            label_args = [label_args,{'interpreter','latex'}]; 
-        end
-        xlabel(axtitle,label_args{:})
+    % Set xaxis
+    for axi=1:length(ax_info.x.names)
+        fld = ax_info.x.names{axi};
+        ax_obj = ax_info.x.data.(fld);
+        set_axis_title(ax_obj,@xlabel)
+        set_axis_type(ax_obj,@(t) set(gca,'XScale',t));
+        set_axis_range(ax_obj,@xlim);
     end
-end
 
-%% Set xlims to max and min if not defined
-for axi=1:ax_info.count
-    subplot(ax_info.count,1,axi);
-    ax = gca(); % get current axis
-    cur_ax_info = ax_info.x.data.(ax_info.x.names{axi});
-    if isfield(cur_ax_info,'range')
-        myrange = cur_ax_info.range;
-        xlim(myrange);
+    %% Turn on the legend
+    for axi=1:ax_info.count
+        subplot(ax_info.count,1,axi);
+        legend('show','location','best');
     end
-end
-
-%% Set ylims to max and min if not defined
-for axi=1:ax_info.count
-    subplot(ax_info.count,1,axi);
-    ax = gca(); % get current axis
-    cur_ax_info = ax_info.y.data.(ax_info.y.names{axi});
-    if isfield(cur_ax_info,'range') % only set if defined. Otherwise auto
-        myrange = cur_ax_info.range;
-        axmin = myrange(1); axmax = myrange(2);
-        ylim(myrange); 
-    end
-end
-
-%% Turn on the legend
-for axi=1:ax_info.count
-    subplot(ax_info.count,1,axi);
-    legend('show','location','best');
-end
 
         
 end
+
+%% Some line setting things
+function [] = set_trace_legend(trace,data)
+    set(trace,'DisplayName',data.name);
+    if isfield(data,'showlegend')
+        onoffmap = containers.Map({1,0},{'on','off'});
+        set(trace.Annotation.LegendInformation,'IconDisplayStyle',onoffmap(data.showlegend));
+    end
+end
+function [] = set_trace_properties(trace,data)
+    if isfield(data,'line')
+        if isfield(data.line,'dash')
+            set(trace,'LineStyle',linestyle_plotly2matlab(data.line.dash))
+        end
+        if isfield(data.line,'color')
+            set(trace,'Color',color_plotly2matlab(data.line.color));
+        end
+    end
+    if isfield(data,'marker')
+        if isfield(data.line,'color')
+            set(trace,'Color',color_plotly2matlab(data.line.color));
+        end
+    end
+end
+
+%% Set some layout stuff
+function [] = set_axis_title(ax_obj,set_funct)
+    if isfield(ax_obj,'title')
+        if isfield(ax_obj.title,'text')
+            axtitle = ax_obj.title.text;
+            label_args = {};
+            if islatex(axtitle) 
+                axtitle = convert_latex(axtitle);
+                label_args = [label_args,{'interpreter','latex'}]; 
+            end
+            set_funct(axtitle,label_args{:})
+        end
+    end
+end
+function [] = set_axis_type(ax_obj,set_funct)
+    if isfield(ax_obj,'type')
+        set_funct(ax_obj.type);
+    end   
+end
+function [] = set_axis_range(ax_obj,set_funct)
+    if isfield(ax_obj,'range') % only set if defined. Otherwise auto
+        myrange = ax_obj.range;
+        if isfield(ax_obj,'type') % adjust range for log axes
+            if strcmp(ax_obj.type,'log')
+                myrange = 10.^myrange; % plotly uses 10^val for range
+            end
+        end
+        set_funct(myrange); 
+    end
+end
+
 
 
 function [tf] = islatex(str)
@@ -164,7 +191,12 @@ function [tf] = islatex(str)
     % @param[in] str - string to check (usually an axis_title or title)
     % @return boolean whether we think its latex or not
     str = strip(str); % strip whitespace
-    tf = all([str(1)=='$',str(end)=='$']);
+    re = regexp(str,'(?<!\\)\$'); % match latex characters for plotly ('$' not '\$')
+    if ~mod(length(re),2)&& ~isempty(re) % if its even we are latex
+        tf = true;
+    else
+        tf = false;
+    end
 end
 
 function [mtex] = convert_latex(tex)
@@ -174,7 +206,7 @@ function [mtex] = convert_latex(tex)
     % @return reformatted latex string for MATLAB
     mtex = tex; % init
     % Lets deal with \text flags that MATLAB can't handle
-    [re_start,re_end] = regexp(tex,'\\text\{[\w\d\s\)\(\,\.\+\-\*\\\/]+\}');
+    [re_start,re_end] = regexp(tex,'\\text\{[\w\d\s\)\(\%\,\.\+\-\*\\\/]+\}');
     for i=1:length(re_start)
         full_str = tex(re_start(i):re_end(i));
         text = [strrep(full_str(1:end-1),'\text{','$'),'$'];
@@ -189,6 +221,8 @@ function [mtex] = convert_latex(tex)
     end
     % remove any empty math sections
     mtex = regexprep(mtex,'\${2,}','');
+    % add forward slash to some special characters
+    mtex = regexprep(mtex,'(?<!\\)\%','\\%');
 end
     
         
@@ -235,10 +269,33 @@ end
 function [color] = colorstr2matlab(str)
     %@brief convert a plotly color string to MATLAB
     %@note this also normalizes to 255
-    [cs,ce] = regexp(str,'\d\.{0,1}[\d]*'); % get start and end
+    rgb = regexp(str,'\d\.{0,1}[\d]*','match'); % get start and end
+    color = cellfun(@(v) str2double(v)/255,rgb);
 end
 
+function [color] = color_plotly2matlab(mycolor)
+    if contains(mycolor,'rgb')
+        color = colorstr2matlab(mycolor);
+    else
+        colorMap = containers.Map({'orange'},{'#FFA500'});
+        if colorMap.isKey(mycolor); mycolor=colorMap(mycolor); end
+        color = mycolor;
+    end
+end
 
+%% Some Maps
+function [v] = linestyle_plotly2matlab(val)
+    map = containers.Map({'solid','dash','dot','dashdot','longdash','longdashdot'},{'-','--',':','-.','--','-.'});
+    %disp(val);
+    %fprintf('%s: %s\n',val,map(val));
+    v = map(val);
+end
+function [v] = markerstyle_plotly2matlab(val) 
+    map = containers.Map(...
+        {'circle','cross','asterisk','circle-dot','x','line-ew','line-ns','square','diamond','triangle-up','triangle-down','triangle-right','triangle-left','star','hexagram'},...
+        {'o'     ,'+'    ,'*'       ,'.'         ,'x','_'      ,'|'      ,'s'     ,'d'      ,'^'          ,'v'            ,'>'             ,'<'            ,'p'   ,'h'       });
+    v = map(val);
+end
 %{
 %testing code
 json_path = "C:\Users\aweis\Google Drive\GradWork\papers\2019\python-matlab\data\figs\plotly\json\combo.json";

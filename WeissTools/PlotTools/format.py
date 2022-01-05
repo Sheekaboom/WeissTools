@@ -56,8 +56,8 @@ def format_plot(fig_handle,**kwargs):
             'yanchor': 'middle'})
 
     # Set axes to use scientific notation (if needed)
-    fig_handle.update_xaxes(exponentformat='e',showexponent='all')
-    fig_handle.update_yaxes(exponentformat='e',showexponent='all')
+    fig_handle.update_xaxes(exponentformat='power',showexponent='all')
+    fig_handle.update_yaxes(exponentformat='power',showexponent='all')
     
     #now set trace specific values
     if options['format_data']:
